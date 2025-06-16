@@ -159,6 +159,52 @@ def PBKDF2(password, salt):
     return key, iv
 
 
+def print_result(password: str, ciphertext: str, result: str):
+   
+    print("\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557\n"+ 
+        "\u2551  Ivan died from a stroke                      \u2551\n"+
+        "\u2551 while he was playing chess with Bogdan Belsky \u2551\n"+ 
+        "\u2551 on 28 March [O.S. 18 March] 1584...           \u2551\n"+
+        "\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d\n")
+   
+    # 1) Build the three lines
+    lines = [
+        f"Password: {password}",
+        f"Cryphertext: {ciphertext}",
+        f"Result: {result}"
+    ]
+    # 2) Compute the width of the inner content (longest line)
+    max_content = max(len(line) for line in lines)
+    #   we add 2 for one space padding on left & right
+    inner_width = max_content + 2
+
+    # 3) Define all the box pieces
+    top_left     = "\u2554"  # ╔
+    top_right    = "\u2557"  # ╗
+    bottom_left  = "\u255A"  # ╚
+    bottom_right = "\u255D"  # ╝
+    horiz_heavy  = "\u2550"  # ═
+    vert_heavy   = "\u2551"  # ║
+    sep_left     = "\u255F"  # ╟
+    sep_right    = "\u2562"  # ╢
+    horiz_light  = "\u2500"  # ─
+
+    # 4) Print top border
+    print(f"{top_left}{horiz_heavy * inner_width}{top_right}")
+    # 5) Print line[0]
+    print(f"{vert_heavy} {lines[0].ljust(max_content)} {vert_heavy}")
+    # 6) Separator
+    print(f"{sep_left}{horiz_light * inner_width}{sep_right}")
+    # 7) Print line[1]
+    print(f"{vert_heavy} {lines[1].ljust(max_content)} {vert_heavy}")
+    # 8) Separator
+    print(f"{sep_left}{horiz_light * inner_width}{sep_right}")
+    # 9) Print line[2]
+    print(f"{vert_heavy} {lines[2].ljust(max_content)} {vert_heavy}")
+    # 10) Bottom border
+    print(f"{bottom_left}{horiz_heavy * inner_width}{bottom_right}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="CLI script that takes a password and crypttext.")
     parser.add_argument('-p', '--password', required=True, help='Password argument enumerated from sourcecode')
@@ -182,27 +228,19 @@ def main():
 
     key, iv = PBKDF2(password, ivan_medvedev_bytes)
 
-    # Output the derived key and IV
-    print("Key:", key)
-    print("IV:", iv)
 
-    print(f"Password: {args.password}")
-    print(f"Crypttext: {args.crypttext}")
-
-    # if args.crypt == 'encrypt':
-    #     result = encrypt(bytes(args.crypttext, "utf-8"), key, iv)
-    # elif args.crypt == 'decrypt':
-    #     result = decrypt(bytes(args.crypttext, "utf-8"), key, iv)
-    # else:
-    #     raise ValueError("Invalid operation specified. Use -e for encrypt or -d for decrypt.")
+    if args.crypt == 'encrypt':
+        result = encrypt(args.crypttext, key, iv)
+    elif args.crypt == 'decrypt':
+        result = decrypt(args.crypttext, key, iv)
+    else:
+        raise ValueError("Invalid operation specified. Use -e for encrypt or -d for decrypt.")
     
-    # print("Result:", result)
+    print_result(
+        args.password, 
+        args.crypttext, 
+        result)
 
-    encryptresult = encrypt(args.crypttext, key, iv)
-    print("Encrypted: ", encryptresult)
-
-    decryptresult = decrypt(encryptresult, key, iv)
-    print("decrypted: ", decryptresult)
 
 if __name__ == "__main__":
     main()
