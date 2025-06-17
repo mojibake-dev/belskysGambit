@@ -1,4 +1,4 @@
-import argparse, base64
+import argparse, base64, hashlib, math
 from io import BytesIO
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import (hashes, padding)
@@ -59,10 +59,7 @@ public static class EncryptionHelper
         return cipherText;
     }
 }
-```
-
 """
-
 
 def encrypt(text: str, key: bytes, iv: bytes) -> str:
 
@@ -85,9 +82,10 @@ def encrypt(text: str, key: bytes, iv: bytes) -> str:
 
 def decrypt(ciphertext: str, key: bytes, iv: bytes) -> bytes:
 
-    cypher64 = ciphertext.replace(' ', '+') # cipherText = cipherText.Replace(" ", "+");
-    cipherbytes = bytes(base64.b64decode(ciphertext)) #byte[] cipherBytes = Convert.FromBase64String(cipherText);
+    cipher64 = ciphertext.replace(' ', '+') # cipherText = cipherText.Replace(" ", "+");
+    cipherbytes = bytes(base64.b64decode(cipher64)) #byte[] cipherBytes = Convert.FromBase64String(cipherText);
 
+    #cipherbytes = bytes(base64.b64decode(ciphertext)) #byte[] cipherBytes = Convert.FromBase64String(cipherText);
 
     # Create AES/CBC decryptor
     cipher = Cipher(
@@ -159,6 +157,53 @@ def PBKDF2(password, salt):
     return key, iv
 
 
+def derive_key_iv(password: str, salt: bytes, iterations: int = 100): # This code attempts to mirror the PBKDF implementatoin in C#'s PasswordDeriveBytes() class https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.passwordderivebytes?view=net-9.0
+    """
+    Python implementation of .NET's PasswordDeriveBytes (SHA1, 100 iterations)
+    matching the behavior of PasswordDeriveBytes.GetBytes for key + IV.
+    """
+    # 1) ComputeBaseValue: SHA1(password || salt), then iter-1 further SHA1s
+    pwd_bytes = password
+    h = hashlib.sha1()
+    h.update(pwd_bytes)
+    h.update(salt)
+    base = h.digest()
+    for _ in range(1, iterations - 1):
+        base = hashlib.sha1(base).digest()
+
+    # 2) First GetBytes(32) => key
+    hash_size = 20
+    total_key_len = 32
+    nblocks = math.ceil(total_key_len / hash_size)
+    result = b''
+    prefix = 0
+    for _ in range(nblocks):
+        to_hash = (str(prefix).encode('ascii') + base) if prefix > 0 else base
+        block = hashlib.sha1(to_hash).digest()
+        result += block
+        prefix += 1
+    key = result[:total_key_len]
+    extra = result
+    extra_count = total_key_len
+
+    # 3) Second GetBytes(16) => IV
+    total_iv_len = 16
+    ib = len(extra) - extra_count
+    part1 = extra[ib:ib + ib]                       # from the leftover of first call
+    to_compute = total_iv_len - ib
+
+    # Compute blocks as needed (prefix continues from previous)
+    iv_blocks = b''
+    while len(iv_blocks) < to_compute:
+        to_hash = str(prefix).encode('ascii') + base
+        block = hashlib.sha1(to_hash).digest()
+        iv_blocks += block
+        prefix += 1
+
+    iv = part1 + iv_blocks[:to_compute]
+    return key, iv
+
+
 def print_result(password: str, ciphertext: str, result: str):
    
     print("\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557\n"+ 
@@ -206,13 +251,18 @@ def print_result(password: str, ciphertext: str, result: str):
 
 
 def main():
+
     parser = argparse.ArgumentParser(description="CLI script that takes a password and crypttext.")
     parser.add_argument('-p', '--password', required=True, help='Password argument enumerated from sourcecode')
     parser.add_argument('-t', '--crypttext', required=True, help='Crypttext argument')
-    
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-e', '--encrypt', action='store_const', dest='crypt', const='encrypt', help='Set mode to encrypt')
-    group.add_argument('-d', '--decrypt', action='store_const', dest='crypt', const='decrypt', help='Set mode to decrypt')
+
+    cryptgroup = parser.add_mutually_exclusive_group(required=True)
+    cryptgroup.add_argument('-e', '--encrypt', action='store_const', dest='crypt', const='encrypt', help='Set mode to encrypt')
+    cryptgroup.add_argument('-d', '--decrypt', action='store_const', dest='crypt', const='decrypt', help='Set mode to decrypt')
+
+    keygroup = parser.add_mutually_exclusive_group(required=True)
+    keygroup.add_argument('-1', '--PBKDF1', action='store_const', dest='pbkdf', const='1', help='Uses PBKDF1/PasswordDeriveBytes()')
+    keygroup.add_argument('-2', '--PBKDF2', action='store_const', dest='pbkdf', const='2', help='Uses PBKDF2/RFC2898DeriveBytes()')
 
     args = parser.parse_args()
 
@@ -225,9 +275,15 @@ def main():
     # Convert password to bytes, from the Rfc2898DeriveBytes() code `byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
     password = bytes(args.password, 'utf-8')
 
+    if args.pbkdf == '1':
+        key, iv = derive_key_iv(password, ivan_medvedev_bytes)
+    elif args.pbkdf == '2':
+        key, iv = PBKDF2(password, ivan_medvedev_bytes)
+    else:
+        raise ValueError("Invalid operation specified. Use -1 for PBKDF1/PasswordDeriveBytes() or -2 for PBDKF2/RFC2898DeriveBytes().")
 
-    key, iv = PBKDF2(password, ivan_medvedev_bytes)
-
+    # print("Key: " + '-'.join(f"{b:02X}" for b in key))
+    # print("IV:  " + '-'.join(f"{b:02X}" for b in iv))
 
     if args.crypt == 'encrypt':
         result = encrypt(args.crypttext, key, iv)
@@ -235,12 +291,11 @@ def main():
         result = decrypt(args.crypttext, key, iv)
     else:
         raise ValueError("Invalid operation specified. Use -e for encrypt or -d for decrypt.")
-    
+
     print_result(
         args.password, 
         args.crypttext, 
         result)
-
 
 if __name__ == "__main__":
     main()
