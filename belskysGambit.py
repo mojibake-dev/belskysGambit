@@ -1,5 +1,4 @@
 import argparse, base64, hashlib, math
-from io import BytesIO
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import (hashes, padding)
 from cryptography.hazmat.backends import default_backend
