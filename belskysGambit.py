@@ -156,7 +156,7 @@ def PBKDF2(password, salt):
     return key, iv
 
 
-def derive_key_iv(password: str, salt: bytes, iterations: int = 100): # This code attempts to mirror the PBKDF implementatoin in C#'s PasswordDeriveBytes() class https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.passwordderivebytes?view=net-9.0
+def PBKFD1(password: str, salt: bytes, iterations: int = 100): # This code attempts to mirror the PBKDF implementatoin in C#'s PasswordDeriveBytes() class https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.passwordderivebytes?view=net-9.0
     """
     Python implementation of .NET's PasswordDeriveBytes (SHA1, 100 iterations)
     matching the behavior of PasswordDeriveBytes.GetBytes for key + IV.
@@ -275,7 +275,7 @@ def main():
     password = bytes(args.password, 'utf-8')
 
     if args.pbkdf == '1':
-        key, iv = derive_key_iv(password, ivan_medvedev_bytes)
+        key, iv = PBKFD1(password, ivan_medvedev_bytes)
     elif args.pbkdf == '2':
         key, iv = PBKDF2(password, ivan_medvedev_bytes)
     else:
