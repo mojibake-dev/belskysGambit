@@ -4,8 +4,6 @@
 
 Ivan died from a stroke while he was playing chess with Bogdan Belsky on 28 March [O.S. 18 March] 1584. Upon Ivan's death, the Russian throne was left to his middle son, Feodor, a weak-minded figure. Feodor died childless in 1598, which ushered in the Time of Troubles. He was buried at the Cathedral of the Archangel in Moscow. 
 
----
----
 ## Usage
 
 ```
@@ -25,7 +23,6 @@ options:
   -2, --PBKDF2          Uses PBKDF2/RFC2898DeriveBytes()
 ```
 
----
 ## Info
 
 I wrote a little python script that does ONE thing for me. It decrypts strings that use the oft reused Ivan Medvedev salted encryption functions.
