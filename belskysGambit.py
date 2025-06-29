@@ -251,7 +251,7 @@ def print_result(password: str, ciphertext: str, result: str):
 
 def main():
 
-    parser = argparse.ArgumentParser(description="CLI script that takes a password and crypttext.")
+    parser = argparse.ArgumentParser(description="CLI script that decrypts strings using the Ivan Medvedev hardcoded salt function.")
     parser.add_argument('-p', '--password', required=True, help='Password argument enumerated from sourcecode')
     parser.add_argument('-t', '--crypttext', required=True, help='Crypttext argument')
 
